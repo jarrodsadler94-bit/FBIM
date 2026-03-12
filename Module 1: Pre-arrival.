@@ -1,72 +1,97 @@
 import streamlit as st
 import pandas as pd
 
-# --- DATA DICTIONARIES (Based on AFAC Dataset) ---
-
-table_a_data = {
-    "AS 2118.1": 360, # Using upper bound of 180-360s range for conservative default
-    "Combined OHI < 1000m2": 10,
-    "Combined OHI 1000m2 - 2000m2": 20,
-    "Combined OHI > 2000m2": 50,
-    "N/A": 0
-}
-
-table_c_data = {
-    "Receive and take down verbal information": 60,
-    "Alternative option (defaulting to 0 for now)": 0 
-}
-
-table_d_data = {
-    "Fully electronic CAD": 0,
-    "Part manual CAD": 15,
-    "Phone or radio": 30
-}
-
-table_e_data = {
-    "Travel to station, dress, assemble, leave": 480,
-    "Dress, assimilate info, depart (career staff)": 90,
-    "Make up and become mobile": 60
-}
-
-# --- APP LAYOUT & LOGIC ---
-
 st.title("FBIM Calculator - Module 1: Pre-Arrival")
-st.markdown("Calculates the cumulative time from initial alarm to brigade arrival.")
+st.markdown("Calculates the cumulative time from fire ignition to brigade departure (turnout).")
 
-# Global Toggle
+# Global Settings
 st.sidebar.header("Global Settings")
 stat_mode = st.sidebar.radio("Statistical Mode", ["Mean", "95th Percentile"])
+st.sidebar.markdown("*(Note: Statistical mode will apply to dataset values in later modules (Table M onwards). Pre-arrival uses deterministic values.)*")
 
+# --- 0. Fire Detection System ---
+st.header("0. Fire Detection System")
+detection_type = st.radio("Detection Type", ["Automatic", "Manual"])
+detection_time = st.number_input("Fire detection time (seconds)", min_value=0, value=0)
+
+# --- 1. System Depressurisation (Table A) ---
 st.header("1. System Depressurisation & Alarm Activation (Table A)")
+table_a_data = {
+    "N/A (No suppression system linked to alarm)": 0,
+    "AS 2118.1 (180-360s)": 360, 
+    "Combined OHI < 1000m2": 10,
+    "Combined OHI 1000m2 - 2000m2": 20,
+    "Combined OHI > 2000m2": 50
+}
 sys_type = st.selectbox("Select System Type / Floor Area", list(table_a_data.keys()))
 time_a = table_a_data[sys_type]
-st.write(f"**Time:** {time_a} seconds")
 
+# --- 2. Alarms, Verification & Notification (Table B) ---
 st.header("2. Alarms, Verification & Notification (Table B)")
-# Time delay for alarm verification is fixed at 20s in the dataset
-alarm_verif_time = 20 
-st.write(f"Time delay for alarm verification: **{alarm_verif_time} seconds**")
-time_b = alarm_verif_time
+notification_type = st.radio("Notification Method", ["Automatic alarm signalling equipment (ASE)", "Manual call to Fire Brigade"])
 
+col1, col2 = st.columns(2)
+with col1:
+    verification_time = st.number_input("Time for verification (seconds)", min_value=0, value=0)
+with col2:
+    notification_delay = st.number_input("Time Delay for fire brigade notification (seconds)", min_value=0, value=0)
+
+time_b = verification_time + notification_delay
+
+# --- 3. Receipt of Information (Table C) ---
 st.header("3. Receipt of Information (Table C)")
-receipt_type = st.selectbox("Select Information Receipt Method", list(table_c_data.keys()))
-time_c = table_c_data[receipt_type]
-st.write(f"**Time:** {time_c} seconds")
+time_c = 0
+receipt_selection_text = "Bypassed (ASE directly notifies fire brigade)"
 
+if notification_type == "Manual call to Fire Brigade":
+    table_c_data = {
+        "Receive and take down verbal information": 60,
+        "Alternative option": 0 
+    }
+    receipt_type = st.selectbox("Select Information Receipt Method", list(table_c_data.keys()))
+    time_c = table_c_data[receipt_type]
+    receipt_selection_text = receipt_type
+else:
+    st.info(receipt_selection_text)
+
+# --- 4. Dispatch Times (Table D) ---
 st.header("4. Dispatch Times (Table D)")
+table_d_data = {
+    "Fully electronic Computer Aided Dispatch (CAD) system": 0,
+    "Part manual Computer Aided Dispatch (CAD) system": 15,
+    "Phone or radio": 30
+}
 dispatch_type = st.selectbox("Select Dispatch Method", list(table_d_data.keys()))
 time_d = table_d_data[dispatch_type]
-st.write(f"**Time:** {time_d} seconds")
 
+# --- 5. Firefighter Response (Table E) ---
 st.header("5. Firefighter Response (Table E)")
+table_e_data = {
+    "Volunteer - Time to travel to fire station, dress, assemble, assimilate info and leave station": 480,
+    "Career - Time to dress, assimilate information and depart": 90,
+    "Make up and become mobile": 60
+}
 response_type = st.selectbox("Select Firefighter Turnout Activity", list(table_e_data.keys()))
 time_e = table_e_data[response_type]
-st.write(f"**Time:** {time_e} seconds")
 
-# Calculate Total Pre-Arrival Time (excluding travel time for now)
-total_pre_arrival = time_a + time_b + time_c + time_d + time_e
+# --- Calculation & Summary Table ---
+total_pre_arrival = detection_time + time_a + time_b + time_c + time_d + time_e
+
+summary_data = [
+    {"Phase": "0. Fire Detection", "Selection": detection_type, "Time (s)": detection_time},
+    {"Phase": "1. System Depressurisation", "Selection": sys_type, "Time (s)": time_a},
+    {"Phase": "2. Alarms & Notification", "Selection": f"{notification_type} (incl. delays)", "Time (s)": time_b},
+    {"Phase": "3. Receipt of Info", "Selection": receipt_selection_text, "Time (s)": time_c},
+    {"Phase": "4. Dispatch", "Selection": dispatch_type, "Time (s)": time_d},
+    {"Phase": "5. Firefighter Response", "Selection": response_type, "Time (s)": time_e}
+]
+
+summary_df = pd.DataFrame(summary_data)
 
 st.markdown("---")
+st.subheader("Module 1 Breakdown")
+st.table(summary_df)
+
 st.subheader("Module 1 Cumulative Time (Pre-Travel)")
 st.write(f"### {total_pre_arrival} seconds")
 st.write(f"### {round(total_pre_arrival/60, 2)} minutes")
