@@ -95,3 +95,122 @@ st.table(summary_df)
 st.subheader("Module 1 Cumulative Time (Pre-Travel)")
 st.write(f"### {total_pre_arrival} seconds")
 st.write(f"### {round(total_pre_arrival/60, 2)} minutes")
+# --- MODULE 2: TRAVEL & SITE ENTRY ---
+st.markdown("---")
+st.title("FBIM Calculator - Module 2: Travel & Site Entry")
+st.markdown("Calculates the time from brigade departure to resolving wayfinding and gathering info at the FDCIE.")
+
+# --- 6. Appliance Travel Time (Table F) ---
+st.header("6. Appliance Travel Time (Table F)")
+st.info("Note: Use travel times to the site based on appropriate/agreed maps data.")
+
+col3, col4 = st.columns(2)
+with col3:
+    travel_to_site_mins = st.number_input("Travel time to site (minutes)", min_value=0.0, value=0.0, step=0.1)
+    travel_to_site_sec = int(travel_to_site_mins * 60)
+with col4:
+    # Appliance speed through site is 8km/h (approx 2.22 m/s)
+    travel_through_site_m = st.number_input("Travel distance through site (meters)", min_value=0, value=0)
+    travel_through_site_sec = int(travel_through_site_m / 2.22)
+
+time_f = travel_to_site_sec + travel_through_site_sec
+st.write(f"Travel to site: **{travel_to_site_sec}s** | Travel through site: **{travel_through_site_sec}s**")
+
+# --- 7. Building Entry & Security (Table G) ---
+st.header("7. Delay for Building Entry (Table G)")
+time_g = st.number_input("Time for any security procedure (seconds)", min_value=0, value=0)
+
+# --- 8. Communicate with Warden (Table H) ---
+st.header("8. Communicate with Warden (Table H)")
+table_h_data = {
+    "N/A (No warden)": 0,
+    "< 1000 m2": 30,
+    "> 1000 m2, < 5000 m2": 45,
+    "> 5000 m2": 90
+}
+warden_type = st.selectbox("Building Floor Area (for Warden Comm.)", list(table_h_data.keys()))
+time_h = table_h_data[warden_type]
+
+# --- 9. Gain / Force Entry (Tables I & J) ---
+st.header("9. Gain or Force Entry (Tables I & J)")
+entry_method = st.radio("Entry Method", ["Open/Unobstructed (0s)", "Gain Entry with Keys (Table J)", "Force Entry (Table I)"])
+
+time_i_j = 0
+entry_selection_text = "Open/Unobstructed"
+
+if entry_method == "Force Entry (Table I)":
+    table_i_data = {
+        "Inward opening, side hung door": 30,
+        "Outward opening, side hung fire door": 180,
+        "Outward opening, side hung solid core door": 90,
+        "Inward opening, hollow core door": 15,
+        "Outward opening, hollow core door": 45,
+        "Glass door": 15,
+        "Roller security/steel door": 220,
+        "Chained gate": 45
+    }
+    entry_door = st.selectbox("Select door/gate type (Forced)", list(table_i_data.keys()))
+    time_i_j = table_i_data[entry_door]
+    entry_selection_text = f"Forced: {entry_door}"
+    
+elif entry_method == "Gain Entry with Keys (Table J)":
+    table_j_data = {
+        "Side hung door": 10,
+        "Roller security door": 30,
+        "Gate": 30
+    }
+    entry_door = st.selectbox("Select door/gate type (Keys)", list(table_j_data.keys()))
+    time_i_j = table_j_data[entry_door]
+    entry_selection_text = f"Keys: {entry_door}"
+
+# --- 10. Wayfinding (Table K) ---
+st.header("10. Resolve Wayfinding (Table K)")
+table_k_data = {
+    "Multi-level, numerous enclosures & passages": 30,
+    "Multi-level, open plan": 10,
+    "Single storey, numerous enclosures & passages, floor area > 5000 m2": 45,
+    "Single storey, open plan": 10,
+    "Single storey, numerous enclosures & passages, floor area < 5000 m2": 30
+}
+wayfinding_type = st.selectbox("Select Complexity/Building Size", list(table_k_data.keys()))
+time_k = table_k_data[wayfinding_type]
+
+# --- 11. Information Gathering (Table L) ---
+st.header("11. Information Gathering FDCIE (Table L)")
+table_l_data = {
+    "N/A (No FDCIE)": 0,
+    "< 5000 m2": 30,
+    "> 5000 m2, < 10000 m2": 60,
+    "> 10000 m2": 90
+}
+fdcie_type = st.selectbox("Building Floor Area (for FDCIE)", list(table_l_data.keys()))
+time_l = table_l_data[fdcie_type]
+
+# --- Module 2 Calculation & Summary Table ---
+total_travel_entry = time_f + time_g + time_h + time_i_j + time_k + time_l
+
+summary_data_m2 = [
+    {"Phase": "6. Appliance Travel", "Selection": f"{travel_to_site_sec}s (to site) + {travel_through_site_sec}s (through site)", "Time (s)": time_f},
+    {"Phase": "7. Security Delay", "Selection": "Designer specified", "Time (s)": time_g},
+    {"Phase": "8. Warden Communication", "Selection": warden_type, "Time (s)": time_h},
+    {"Phase": "9. Building Entry", "Selection": entry_selection_text, "Time (s)": time_i_j},
+    {"Phase": "10. Wayfinding", "Selection": wayfinding_type, "Time (s)": time_k},
+    {"Phase": "11. FDCIE Info Gathering", "Selection": fdcie_type, "Time (s)": time_l}
+]
+
+summary_df_m2 = pd.DataFrame(summary_data_m2)
+
+st.markdown("---")
+st.subheader("Module 2 Breakdown")
+st.table(summary_df_m2)
+
+st.subheader("Module 2 Cumulative Time (Travel & Entry)")
+st.write(f"### {total_travel_entry} seconds")
+st.write(f"### {round(total_travel_entry/60, 2)} minutes")
+
+# --- Grand Total ---
+st.markdown("---")
+st.header("Total Intervention Time (Modules 1 + 2)")
+grand_total = total_pre_arrival + total_travel_entry
+st.write(f"## {grand_total} seconds")
+st.write(f"## {round(grand_total/60, 2)} minutes")
