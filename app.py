@@ -15,8 +15,8 @@ PERSISTENT_KEYS = [
     "entry_door_forced", "entry_door_keys", "wayfinding_type", "fdcie_type", 
     "tool_type", "horiz_travel_type", "horiz_distance", "stair_travel_type", 
     "stair_flights", "steps_per_flight", 
-    "v1_type", "v1_lengths", "v2_type", "v2_lengths", "v3_type", "v3_lengths", # NEW V1-V3 keys
-    "v4_type", "v4_lengths", "v5_type", "v5_lengths",                          # NEW V4-V5 keys
+    "v1_type", "v1_lengths", "v2_type", "v2_lengths", "v3_type", "v3_lengths", 
+    "v4_type", "v4_lengths", "v5_type", "v5_lengths",                          
     "selected_safety", "water_search", "appliance_pos_dist", "selected_static", 
     "suction_lengths", "sec_search_area", "rescue_dist", "aerial_pos_dist", 
     "aerial_setup", "aerial_safety", "aerial_elev", "elev_dist", "aerial_monitor"
@@ -79,6 +79,7 @@ def convert_df(df):
 # --- APP HEADER & GLOBAL SETTINGS ---
 st.title("AFAC FBIM Calculator")
 st.markdown("Calculates the complete Fire Brigade Intervention Model timeline.")
+st.markdown("**Reference:** [AFAC Fire Brigade Intervention Model Manual](https://www.afac.com.au/resources/fire-brigade-intervention-model-manual)")
 
 st.sidebar.header("Global Settings")
 stat_mode = st.sidebar.radio("Statistical Mode", ["Mean", "95th Percentile"], key="stat_mode")
@@ -324,7 +325,7 @@ active_hoses = []
 # V1 Row
 c1, c2 = st.columns([3, 1])
 v1_type = c1.selectbox("V1: Hydrant to Appliance", list(v1_opts.keys()), key="v1_type")
-v1_len = c2.number_input("V1 Lengths (30m)", min_value=0.0, step=1.0, key="v1_lengths")
+v1_len = c2.number_input("V1 Lengths (30m)", min_value=0.0, step=0.5, key="v1_lengths")
 if v1_type != "N/A" and v1_len > 0:
     time_v += calc_time(v1_opts[v1_type]["mean"], v1_opts[v1_type]["sd"], stat_mode) * v1_len
     active_hoses.append(f"V1 ({v1_len}x)")
@@ -332,7 +333,7 @@ if v1_type != "N/A" and v1_len > 0:
 # V2 Row
 c1, c2 = st.columns([3, 1])
 v2_type = c1.selectbox("V2: Appliance to Branch", list(v2_opts.keys()), key="v2_type")
-v2_len = c2.number_input("V2 Lengths (30m)", min_value=0.0, step=1.0, key="v2_lengths")
+v2_len = c2.number_input("V2 Lengths (30m)", min_value=0.0, step=0.5, key="v2_lengths")
 if v2_type != "N/A" and v2_len > 0:
     time_v += calc_time(v2_opts[v2_type]["mean"], v2_opts[v2_type]["sd"], stat_mode) * v2_len
     active_hoses.append(f"V2 ({v2_len}x)")
@@ -340,7 +341,7 @@ if v2_type != "N/A" and v2_len > 0:
 # V3 Row
 c1, c2 = st.columns([3, 1])
 v3_type = c1.selectbox("V3: Appliance to Booster", list(v3_opts.keys()), key="v3_type")
-v3_len = c2.number_input("V3 Lengths (30m)", min_value=0.0, step=1.0, key="v3_lengths")
+v3_len = c2.number_input("V3 Lengths (30m)", min_value=0.0, step=0.5, key="v3_lengths")
 if v3_type != "N/A" and v3_len > 0:
     time_v += calc_time(v3_opts[v3_type]["mean"], v3_opts[v3_type]["sd"], stat_mode) * v3_len
     active_hoses.append(f"V3 ({v3_len}x)")
@@ -348,7 +349,7 @@ if v3_type != "N/A" and v3_len > 0:
 # V4 Row
 c1, c2 = st.columns([3, 1])
 v4_type = c1.selectbox("V4: Charge Delivery Hose", list(v4_opts.keys()), key="v4_type")
-v4_len = c2.number_input("V4 Lengths (30m)", min_value=0.0, step=1.0, key="v4_lengths")
+v4_len = c2.number_input("V4 Lengths (30m)", min_value=0.0, step=0.5, key="v4_lengths")
 if v4_type != "N/A" and v4_len > 0:
     time_v += calc_time(v4_opts[v4_type]["mean"], v4_opts[v4_type]["sd"], stat_mode) * v4_len
     active_hoses.append(f"V4 ({v4_len}x)")
@@ -356,7 +357,7 @@ if v4_type != "N/A" and v4_len > 0:
 # V5 Row
 c1, c2 = st.columns([3, 1])
 v5_type = c1.selectbox("V5: Boosted Hydrant & Charge", list(v5_opts.keys()), key="v5_type")
-v5_len = c2.number_input("V5 Lengths (30m)", min_value=0.0, step=1.0, key="v5_lengths")
+v5_len = c2.number_input("V5 Lengths (30m)", min_value=0.0, step=0.5, key="v5_lengths")
 if v5_type != "N/A" and v5_len > 0:
     time_v += calc_time(v5_opts[v5_type]["mean"], v5_opts[v5_type]["sd"], stat_mode) * v5_len
     active_hoses.append(f"V5 ({v5_len}x)")
