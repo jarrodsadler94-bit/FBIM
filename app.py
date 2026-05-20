@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import math
 import json
-import os
+
 # ==========================================
 # 0. SAVE / LOAD PROJECT ENGINE
 # ==========================================
@@ -41,7 +41,7 @@ if uploaded_file is not None:
             st.sidebar.error(f"Error reading file: {e}")
 
 # --- 2. SAVE CURRENT PROJECT ---
-# Extract all current inputs from the session state
+# Extract all current inputs from the session state safely
 current_inputs = {k: st.session_state[k] for k in PERSISTENT_KEYS if k in st.session_state}
 config_json = json.dumps(current_inputs, indent=4)
 
@@ -54,6 +54,34 @@ st.sidebar.download_button(
 )
 
 st.sidebar.markdown("---")
+
+# --- HELPER FUNCTIONS ---
+def calc_time(mean, sd, mode):
+    """Calculates time based on Mean or 95th Percentile."""
+    if mode == "95th Percentile":
+        return round(mean + (1.645 * sd), 1)
+    return round(mean, 1)
+
+def calc_speed(mean, sd, mode, min_recorded_speed):
+    """Calculates speed. 95th percentile time = 5th percentile speed (slower)."""
+    if mode == "95th Percentile":
+        stat_speed = mean - (1.645 * sd)
+        return round(max(stat_speed, min_recorded_speed), 2)
+    return round(mean, 2)
+
+@st.cache_data
+def convert_df(df):
+    """Caches the DataFrame conversion to prevent re-running on every click."""
+    return df.to_csv(index=False).encode('utf-8')
+
+# --- APP HEADER & GLOBAL SETTINGS ---
+st.title("AFAC FBIM Calculator")
+st.markdown("Calculates the complete Fire Brigade Intervention Model timeline.")
+
+st.sidebar.header("Global Settings")
+stat_mode = st.sidebar.radio("Statistical Mode", ["Mean", "95th Percentile"], key="stat_mode")
+st.sidebar.markdown("*(Note: Statistical mode applies to Table M onwards. Pre-arrival uses deterministic values.)*")
+
 # ==========================================
 # MODULE 1: PRE-ARRIVAL
 # ==========================================
