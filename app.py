@@ -324,7 +324,7 @@ active_hoses = []
 # V1 Row
 c1, c2 = st.columns([3, 1])
 v1_type = c1.selectbox("V1: Hydrant to Appliance", list(v1_opts.keys()), key="v1_type")
-v1_len = c2.number_input("V1 Lengths (30m)", min_value=0.0, step=0.5, key="v1_lengths")
+v1_len = c2.number_input("V1 Lengths (30m)", min_value=0.0, step=1.0, key="v1_lengths")
 if v1_type != "N/A" and v1_len > 0:
     time_v += calc_time(v1_opts[v1_type]["mean"], v1_opts[v1_type]["sd"], stat_mode) * v1_len
     active_hoses.append(f"V1 ({v1_len}x)")
@@ -332,7 +332,7 @@ if v1_type != "N/A" and v1_len > 0:
 # V2 Row
 c1, c2 = st.columns([3, 1])
 v2_type = c1.selectbox("V2: Appliance to Branch", list(v2_opts.keys()), key="v2_type")
-v2_len = c2.number_input("V2 Lengths (30m)", min_value=0.0, step=0.5, key="v2_lengths")
+v2_len = c2.number_input("V2 Lengths (30m)", min_value=0.0, step=1.0, key="v2_lengths")
 if v2_type != "N/A" and v2_len > 0:
     time_v += calc_time(v2_opts[v2_type]["mean"], v2_opts[v2_type]["sd"], stat_mode) * v2_len
     active_hoses.append(f"V2 ({v2_len}x)")
@@ -340,7 +340,7 @@ if v2_type != "N/A" and v2_len > 0:
 # V3 Row
 c1, c2 = st.columns([3, 1])
 v3_type = c1.selectbox("V3: Appliance to Booster", list(v3_opts.keys()), key="v3_type")
-v3_len = c2.number_input("V3 Lengths (30m)", min_value=0.0, step=0.5, key="v3_lengths")
+v3_len = c2.number_input("V3 Lengths (30m)", min_value=0.0, step=1.0, key="v3_lengths")
 if v3_type != "N/A" and v3_len > 0:
     time_v += calc_time(v3_opts[v3_type]["mean"], v3_opts[v3_type]["sd"], stat_mode) * v3_len
     active_hoses.append(f"V3 ({v3_len}x)")
@@ -348,7 +348,7 @@ if v3_type != "N/A" and v3_len > 0:
 # V4 Row
 c1, c2 = st.columns([3, 1])
 v4_type = c1.selectbox("V4: Charge Delivery Hose", list(v4_opts.keys()), key="v4_type")
-v4_len = c2.number_input("V4 Lengths (30m)", min_value=0.0, step=0.5, key="v4_lengths")
+v4_len = c2.number_input("V4 Lengths (30m)", min_value=0.0, step=1.0, key="v4_lengths")
 if v4_type != "N/A" and v4_len > 0:
     time_v += calc_time(v4_opts[v4_type]["mean"], v4_opts[v4_type]["sd"], stat_mode) * v4_len
     active_hoses.append(f"V4 ({v4_len}x)")
@@ -356,7 +356,7 @@ if v4_type != "N/A" and v4_len > 0:
 # V5 Row
 c1, c2 = st.columns([3, 1])
 v5_type = c1.selectbox("V5: Boosted Hydrant & Charge", list(v5_opts.keys()), key="v5_type")
-v5_len = c2.number_input("V5 Lengths (30m)", min_value=0.0, step=0.5, key="v5_lengths")
+v5_len = c2.number_input("V5 Lengths (30m)", min_value=0.0, step=1.0, key="v5_lengths")
 if v5_type != "N/A" and v5_len > 0:
     time_v += calc_time(v5_opts[v5_type]["mean"], v5_opts[v5_type]["sd"], stat_mode) * v5_len
     active_hoses.append(f"V5 ({v5_len}x)")
