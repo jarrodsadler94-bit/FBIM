@@ -3,13 +3,10 @@ import pandas as pd
 import math
 import json
 import os
-
 # ==========================================
-# 0. DEV CACHE ENGINE & CONFIG
+# 0. SAVE / LOAD PROJECT ENGINE
 # ==========================================
-CONFIG_FILE = "fbim_dev_cache.json"
-
-# Every widget key in the app must be listed here to persist across code edits
+# Every widget key in the app must be listed here to persist
 PERSISTENT_KEYS = [
     "stat_mode", "detection_type", "detection_time", "sys_type", 
     "notification_type", "verification_time", "notification_delay", 
@@ -23,63 +20,40 @@ PERSISTENT_KEYS = [
     "aerial_setup", "aerial_safety", "aerial_elev", "elev_dist", "aerial_monitor"
 ]
 
-# Load cached data into session state BEFORE any widgets are rendered
-if os.path.exists(CONFIG_FILE):
-    try:
-        with open(CONFIG_FILE, "r") as f:
-            cached_data = json.load(f)
+st.sidebar.markdown("### 💾 Save & Load Projects")
+
+# --- 1. LOAD PREVIOUS PROJECT ---
+uploaded_file = st.sidebar.file_uploader("Load saved inputs (.json)", type=["json"])
+
+if uploaded_file is not None:
+    # Check if we already processed this upload to prevent infinite reload loops
+    if st.session_state.get("last_loaded_file") != uploaded_file.name:
+        try:
+            loaded_data = json.load(uploaded_file)
             for key in PERSISTENT_KEYS:
-                if key in cached_data and key not in st.session_state:
-                    st.session_state[key] = cached_data[key]
-    except Exception as e:
-        st.sidebar.error(f"Error loading cache: {e}")
+                if key in loaded_data:
+                    st.session_state[key] = loaded_data[key]
+            
+            # Tag this file as loaded and force the page to refresh with the new numbers
+            st.session_state["last_loaded_file"] = uploaded_file.name
+            st.rerun() 
+        except Exception as e:
+            st.sidebar.error(f"Error reading file: {e}")
 
+# --- 2. SAVE CURRENT PROJECT ---
+# Extract all current inputs from the session state
+current_inputs = {k: st.session_state[k] for k in PERSISTENT_KEYS if k in st.session_state}
+config_json = json.dumps(current_inputs, indent=4)
 
-# --- HELPER FUNCTIONS ---
-def calc_time(mean, sd, mode):
-    """Calculates time based on Mean or 95th Percentile."""
-    if mode == "95th Percentile":
-        return round(mean + (1.645 * sd), 1)
-    return round(mean, 1)
-
-def calc_speed(mean, sd, mode, min_recorded_speed):
-    """Calculates speed. 95th percentile time = 5th percentile speed (slower)."""
-    if mode == "95th Percentile":
-        stat_speed = mean - (1.645 * sd)
-        return round(max(stat_speed, min_recorded_speed), 2)
-    return round(mean, 2)
-
-@st.cache_data
-def convert_df(df):
-    """Caches the DataFrame conversion to prevent re-running on every click."""
-    return df.to_csv(index=False).encode('utf-8')
-
-# --- APP HEADER & GLOBAL SETTINGS ---
-st.title("AFAC FBIM Calculator")
-st.markdown("Calculates the complete Fire Brigade Intervention Model timeline.")
-
-# --- SIDEBAR: CACHE CONTROLS ---
-st.sidebar.markdown("### 🛠️ Developer Cache")
-if st.sidebar.button("💾 Save Inputs", use_container_width=True):
-    current_inputs = {k: st.session_state[k] for k in PERSISTENT_KEYS if k in st.session_state}
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(current_inputs, f, indent=4)
-    st.sidebar.success("State frozen! Safely edit your code now.")
-
-if st.sidebar.button("🗑️ Clear Cache", use_container_width=True):
-    if os.path.exists(CONFIG_FILE):
-        os.remove(CONFIG_FILE)
-    for k in PERSISTENT_KEYS:
-        if k in st.session_state:
-            del st.session_state[k]
-    st.rerun()
+st.sidebar.download_button(
+    label="⬇️ Download Current Inputs",
+    data=config_json,
+    file_name="fbim_project_save.json",
+    mime="application/json",
+    use_container_width=True
+)
 
 st.sidebar.markdown("---")
-
-st.sidebar.header("Global Settings")
-stat_mode = st.sidebar.radio("Statistical Mode", ["Mean", "95th Percentile"], key="stat_mode")
-st.sidebar.markdown("*(Note: Statistical mode applies to Table M onwards. Pre-arrival uses deterministic values.)*")
-
 # ==========================================
 # MODULE 1: PRE-ARRIVAL
 # ==========================================
