@@ -14,7 +14,9 @@ PERSISTENT_KEYS = [
     "travel_through_site_m", "time_g", "warden_type", "entry_method", 
     "entry_door_forced", "entry_door_keys", "wayfinding_type", "fdcie_type", 
     "tool_type", "horiz_travel_type", "horiz_distance", "stair_travel_type", 
-    "stair_flights", "steps_per_flight", "selected_hoses", "hose_lengths", 
+    "stair_flights", "steps_per_flight", 
+    "v1_type", "v1_lengths", "v2_type", "v2_lengths", "v3_type", "v3_lengths", # NEW V1-V3 keys
+    "v4_type", "v4_lengths", "v5_type", "v5_lengths",                          # NEW V4-V5 keys
     "selected_safety", "water_search", "appliance_pos_dist", "selected_static", 
     "suction_lengths", "sec_search_area", "rescue_dist", "aerial_pos_dist", 
     "aerial_setup", "aerial_safety", "aerial_elev", "elev_dist", "aerial_monitor"
@@ -308,26 +310,58 @@ if stair_flights > 0:
 
 # 16. Hose Laying & Charging (Table V)
 st.subheader("16. Lay, Connect and Charge Hose (Table V)")
-table_v_data = {
-    "V1.1: Hydrant to appliance (90mm)": {"mean": 144.7, "sd": 90.2},
-    "V1.2: Hydrant to appliance (65mm)": {"mean": 60.4, "sd": 30.2},
-    "V2.1: Appliance to branch (65mm)": {"mean": 39.4, "sd": 17.4},
-    "V2.2: Appliance to branch (38mm)": {"mean": 33.3, "sd": 15.4},
-    "V3: Appliance to booster (65mm)": {"mean": 45.3, "sd": 20.3},
-    "V4.1: Charge delivery hose (65mm)": {"mean": 17.1, "sd": 13.2},
-    "V4.2: Charge delivery hose (38mm)": {"mean": 18.4, "sd": 10.2},
-    "V5.1: Boosted hydrant & charge (65mm)": {"mean": 59.6, "sd": 37.9},
-    "V5.2: Boosted hydrant & charge (38mm)": {"mean": 40.9, "sd": 17.8}
-}
-selected_hoses = st.multiselect("Select applicable hose operations", list(table_v_data.keys()), key="selected_hoses")
-hose_lengths = st.number_input("Number of 30m hose lengths required", min_value=0.0, value=1.0, step=0.5, key="hose_lengths")
+
+# Define the separate options
+v1_opts = {"N/A": {"mean": 0, "sd": 0}, "V1.1: Hydrant to appliance (90mm)": {"mean": 144.7, "sd": 90.2}, "V1.2: Hydrant to appliance (65mm)": {"mean": 60.4, "sd": 30.2}}
+v2_opts = {"N/A": {"mean": 0, "sd": 0}, "V2.1: Appliance to branch (65mm)": {"mean": 39.4, "sd": 17.4}, "V2.2: Appliance to branch (38mm)": {"mean": 33.3, "sd": 15.4}}
+v3_opts = {"N/A": {"mean": 0, "sd": 0}, "V3: Appliance to booster (65mm)": {"mean": 45.3, "sd": 20.3}}
+v4_opts = {"N/A": {"mean": 0, "sd": 0}, "V4.1: Charge delivery hose (65mm)": {"mean": 17.1, "sd": 13.2}, "V4.2: Charge delivery hose (38mm)": {"mean": 18.4, "sd": 10.2}}
+v5_opts = {"N/A": {"mean": 0, "sd": 0}, "V5.1: Boosted hydrant & charge (65mm)": {"mean": 59.6, "sd": 37.9}, "V5.2: Boosted hydrant & charge (38mm)": {"mean": 40.9, "sd": 17.8}}
 
 time_v = 0
-if selected_hoses and hose_lengths > 0:
-    for hose in selected_hoses:
-        base_time = calc_time(table_v_data[hose]["mean"], table_v_data[hose]["sd"], stat_mode)
-        time_v += base_time * hose_lengths
-    time_v = round(time_v, 1)
+active_hoses = []
+
+# V1 Row
+c1, c2 = st.columns([3, 1])
+v1_type = c1.selectbox("V1: Hydrant to Appliance", list(v1_opts.keys()), key="v1_type")
+v1_len = c2.number_input("V1 Lengths (30m)", min_value=0.0, step=0.5, key="v1_lengths")
+if v1_type != "N/A" and v1_len > 0:
+    time_v += calc_time(v1_opts[v1_type]["mean"], v1_opts[v1_type]["sd"], stat_mode) * v1_len
+    active_hoses.append(f"V1 ({v1_len}x)")
+
+# V2 Row
+c1, c2 = st.columns([3, 1])
+v2_type = c1.selectbox("V2: Appliance to Branch", list(v2_opts.keys()), key="v2_type")
+v2_len = c2.number_input("V2 Lengths (30m)", min_value=0.0, step=0.5, key="v2_lengths")
+if v2_type != "N/A" and v2_len > 0:
+    time_v += calc_time(v2_opts[v2_type]["mean"], v2_opts[v2_type]["sd"], stat_mode) * v2_len
+    active_hoses.append(f"V2 ({v2_len}x)")
+
+# V3 Row
+c1, c2 = st.columns([3, 1])
+v3_type = c1.selectbox("V3: Appliance to Booster", list(v3_opts.keys()), key="v3_type")
+v3_len = c2.number_input("V3 Lengths (30m)", min_value=0.0, step=0.5, key="v3_lengths")
+if v3_type != "N/A" and v3_len > 0:
+    time_v += calc_time(v3_opts[v3_type]["mean"], v3_opts[v3_type]["sd"], stat_mode) * v3_len
+    active_hoses.append(f"V3 ({v3_len}x)")
+
+# V4 Row
+c1, c2 = st.columns([3, 1])
+v4_type = c1.selectbox("V4: Charge Delivery Hose", list(v4_opts.keys()), key="v4_type")
+v4_len = c2.number_input("V4 Lengths (30m)", min_value=0.0, step=0.5, key="v4_lengths")
+if v4_type != "N/A" and v4_len > 0:
+    time_v += calc_time(v4_opts[v4_type]["mean"], v4_opts[v4_type]["sd"], stat_mode) * v4_len
+    active_hoses.append(f"V4 ({v4_len}x)")
+
+# V5 Row
+c1, c2 = st.columns([3, 1])
+v5_type = c1.selectbox("V5: Boosted Hydrant & Charge", list(v5_opts.keys()), key="v5_type")
+v5_len = c2.number_input("V5 Lengths (30m)", min_value=0.0, step=0.5, key="v5_lengths")
+if v5_type != "N/A" and v5_len > 0:
+    time_v += calc_time(v5_opts[v5_type]["mean"], v5_opts[v5_type]["sd"], stat_mode) * v5_len
+    active_hoses.append(f"V5 ({v5_len}x)")
+
+time_v = round(time_v, 1)
 
 # 17. Safety & Hazmat Procedures (Tables N & O)
 st.subheader("17. Safety Equipment & Procedures (Tables N & O)")
@@ -418,7 +452,7 @@ summary_data_m3 = [
     {"Phase": "13. Remove Tools", "Selection": tool_type, "Time (s)": time_p},
     {"Phase": "14. Horizontal Travel", "Selection": f"{horiz_distance}m", "Time (s)": time_q},
     {"Phase": "15. Stair Travel", "Selection": f"{stair_flights} flights", "Time (s)": time_t},
-    {"Phase": "16. Hose Operations", "Selection": f"{len(selected_hoses)} ops", "Time (s)": time_v},
+    {"Phase": "16. Hose Operations", "Selection": ", ".join(active_hoses) if active_hoses else "None", "Time (s)": time_v},
     {"Phase": "17. Safety & Hazmat", "Selection": f"{len(selected_safety)} ops", "Time (s)": time_n_o},
     {"Phase": "18. External/Static Water", "Selection": water_search, "Time (s)": time_w + time_x},
     {"Phase": "19. Search and Rescue", "Selection": f"{sec_search_area}m2 / {rescue_dist}m", "Time (s)": time_y},
